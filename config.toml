@@ -1,10 +1,9 @@
 [modal_settings]
-allow_concurrent_inputs = 10
-container_idle_timeout = 600
-timeout = 7200             
-gpu = "A100"               
-cpu = 8
-memory = 16384
+container_idle_timeout = 60  # Idle time in seconds before container scales down (used for scaledown_window)
+timeout = 80000             # Max container lifetime in seconds (e.g., 2 hours). Container closes at the end of training so this rarely matters.
+gpu = "L40S"                 # GPU type: T4, L4, A10, L40S, A100, A100-40GB, A100-80GB, RTX-PRO-6000, H100/H100!, H200, B200/B200+
+cpu = 2                      # Numbers of cores reserved
+memory = 10240               # Amount of RAM reserved
 
-[kohya_settings]
+[backend_settings]
 port = 8000
