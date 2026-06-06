@@ -132,7 +132,63 @@ def run_lora_backend():
         json.dump({"remote": False, "port": PORT, "host": "0.0.0.0"}, f)
         
     import main
-    return main.app
+    backend_app = main.app
+
+    import threading
+    import httpx
+    import time
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.routing import Route
+    from starlette.responses import JSONResponse
+
+    async def keep_alive_ping(request):
+        return JSONResponse({"status": "alive"})
+
+    backend_app.routes.append(Route("/keep_alive_ping", keep_alive_ping))
+
+    class KeepAliveMiddleware(BaseHTTPMiddleware):
+        def __init__(self, app):
+            super().__init__(app)
+            self.public_url = None
+            self.thread_started = False
+            self.lock = threading.Lock()
+
+        async def dispatch(self, request, call_next):
+            if not self.public_url:
+                with self.lock:
+                    if not self.public_url:
+                        host = request.headers.get("host")
+                        if host and "modal.run" in host:
+                            self.public_url = f"https://{host}"
+                        elif host:
+                            self.public_url = f"http://{host}"
+            
+            with self.lock:
+                if self.public_url and not self.thread_started:
+                    self.thread_started = True
+                    threading.Thread(target=self.keep_alive_loop, daemon=True).start()
+                    
+            response = await call_next(request)
+            return response
+            
+        def keep_alive_loop(self):
+            while True:
+                time.sleep(20)
+                try:
+                    is_training = False
+                    if hasattr(backend_app.state, "TRAINING_THREAD"):
+                        thread = backend_app.state.TRAINING_THREAD
+                        if thread is not None and getattr(thread, "poll", lambda: None)() is None:
+                            is_training = True
+                    
+                    if is_training and self.public_url:
+                        httpx.get(f"{self.public_url}/keep_alive_ping", timeout=10)
+                except Exception as e:
+                    print(f"Keep-alive ping error: {e}")
+
+    backend_app.add_middleware(KeepAliveMiddleware)
+
+    return backend_app
 
 @app.local_entrypoint()
 def main():
