@@ -90,17 +90,18 @@ except Exception as e:
 app = modal.App(name="lora-backend", image=lora_image)
 
 class Paths:
-    CACHE = "/cache"
     MODELS = "/models"
     DATASET = "/dataset"
     OUTPUTS = "/outputs"
+    STATES = "/states"
+    LOGS = "/logs"
 
 # Define volumes
-cache_vol = modal.Volume.from_name("hf-cache", create_if_missing=True)
 models_vol = modal.Volume.from_name("lora-models", create_if_missing=True)
 dataset_vol = modal.Volume.from_name("lora-dataset", create_if_missing=True)
 outputs_vol = modal.Volume.from_name("lora-outputs", create_if_missing=True)
-
+states_vol = modal.Volume.from_name("lora-states", create_if_missing=True)
+logs_vol = modal.Volume.from_name("lora-logs", create_if_missing=True)
 
 @app.function(
     memory=MEMORY_CONFIG,
@@ -109,10 +110,11 @@ outputs_vol = modal.Volume.from_name("lora-outputs", create_if_missing=True)
     timeout=TIMEOUT,
     scaledown_window=CONTAINER_IDLE_TIMEOUT,
     volumes={
-        Paths.CACHE: cache_vol,
         Paths.MODELS: models_vol,
         Paths.DATASET: dataset_vol,
         Paths.OUTPUTS: outputs_vol,
+        Paths.STATES: states_vol,
+        Paths.LOGS: logs_vol,
     },
     max_containers=1,
 )

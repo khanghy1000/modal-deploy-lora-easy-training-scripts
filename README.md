@@ -23,12 +23,14 @@ The `app.py` script maps these volumes to paths inside the container:
 * `lora-models` volume is mounted at `/models/`
 * `lora-dataset` volume is mounted at `/dataset/` (Note: singular "dataset" in the path as per your `app.py`)
 * `lora-outputs` volume is mounted at `/outputs/`
+* `lora-states` volume is mounted at `/states/`
+* `lora-logs` volume is mounted at `/logs/`
 
 **Uploading Base Models:**
    * Volume Name: `lora-models`
    * Example: If your model `my_sdxl_model.safetensors` is locally at `C:\AI\Models\my_sdxl_model.safetensors`:
         ```bash
-        modal volume put kohya-models C:\AI\Models\my_sdxl_model.safetensors /my_sdxl_model.safetensors
+        modal volume put lora-models C:\AI\Models\my_sdxl_model.safetensors my_sdxl_model.safetensors
         ```
         This makes the model available inside the container at `/models/my_sdxl_model.safetensors`.
 
@@ -36,7 +38,7 @@ The `app.py` script maps these volumes to paths inside the container:
    * Volume Name: `lora-dataset`
    * Example: If your processed dataset folder (e.g., `mycharacter_style`) is locally at `D:\TrainingData\my_style_project\mycharacter_style`:
         ```bash
-        modal volume put lora-dataset D:\TrainingData\my_style_project\mycharacter_style /mycharacter_style
+        modal volume put lora-dataset D:\TrainingData\my_style_project\mycharacter_style mycharacter_style
         ```
         This makes the dataset available inside the container at `/dataset/mycharacter_style/`. When using the lora GUI, you would set "Image folder" to `/dataset/`.
 
@@ -71,3 +73,4 @@ Your trained models (LoRA files, etc.) will be saved to the `/outputs/` director
 
 ```bash
 modal volume get lora-outputs /my_awesome_lora.safetensors C:\LoRAs\my_awesome_lora.safetensors
+```
