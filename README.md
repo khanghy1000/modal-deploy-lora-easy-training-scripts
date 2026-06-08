@@ -74,3 +74,9 @@ Your trained models (LoRA files, etc.) will be saved to the `/outputs/` director
 ```bash
 modal volume get lora-outputs /my_awesome_lora.safetensors C:\LoRAs\my_awesome_lora.safetensors
 ```
+
+## Training an iLECO
+
+```bash
+modal run app_leco.py --ileco-prompt-pairs="/dataset/anima_ileco_pairs.json" --output-name="anima_ileco_test"
+```
