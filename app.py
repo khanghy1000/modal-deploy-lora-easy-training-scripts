@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = "3.11"
 LORA_BACKEND_REPO_URL = "https://github.com/67372a/LoRA_Easy_Training_scripts_Backend.git"
+LORA_BACKEND_REPO_BRANCH = "refresh"
+LORA_BACKEND_REPO_COMMIT = "refresh" # Specify a commit hash to force update the image
 
 lora_image = (
     modal.Image.from_registry(
@@ -33,7 +35,7 @@ lora_image = (
     .run_commands(
         "set -ex",
         "pip install --upgrade pip uv",
-        f"git clone -b refresh --recursive {LORA_BACKEND_REPO_URL} /lora_backend",
+        f"git clone -b {LORA_BACKEND_REPO_BRANCH} --recursive {LORA_BACKEND_REPO_URL} /lora_backend",
     )
     .workdir("/lora_backend")
     .run_commands(
@@ -45,7 +47,6 @@ lora_image = (
         "uv pip install --system -U --no-deps torchao~=0.13.0 --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cu128",
         "uv pip install --system -U --force-reinstall --no-deps git+https://github.com/67372a/LyCORIS@dev",
         "uv pip install --system --no-deps https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp311-cp311-linux_x86_64.whl",
-        gpu="any",
     )
     .workdir("/lora_backend/sd_scripts")
     .run_commands(
@@ -55,7 +56,24 @@ lora_image = (
     )
     .run_commands(
         "mkdir -p /root/.cache/huggingface/accelerate",
-        "printf \"compute_environment: LOCAL_MACHINE\\ndistributed_type: 'NO'\\ndowncase_fp16: 'NO'\\nmachine_rank: 0\\nmain_training_function: main\\nmixed_precision: bf16\\nnum_machines: 1\\nnum_processes: 1\\nrdzv_backend: static\\nsame_network: true\\nuse_cpu: false\\n\" > /root/.cache/huggingface/accelerate/default_config.yaml",
+        """cat > /root/.cache/huggingface/accelerate/default_config.yaml << 'EOF'
+compute_environment: LOCAL_MACHINE
+distributed_type: 'NO'
+downcase_fp16: 'NO'
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+num_processes: 1
+rdzv_backend: static
+same_network: true
+use_cpu: false
+EOF""",
+    )
+    .workdir("/lora_backend")
+    .run_commands(
+        f"git fetch origin {LORA_BACKEND_REPO_BRANCH}",
+        f"git checkout {LORA_BACKEND_REPO_COMMIT}",
     )
     .run_commands(
         "echo 'Backend installation completed.'",
